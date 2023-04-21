@@ -6,19 +6,18 @@
  */
 
 #include "PietteTech_DHT.h"
-#include "VL53L1X.h"
 
 #define SENSOR_PIN D2
 #define HEARTBEAT_LED D7
 #define DHT_TYPE DHT11
 #define POLL_RATE 30000 // read every 30 secs
-// #define LED_RATE 2000   // blink at 0.5 hz
 #define CRITICAL_TEMP 35
+#define NORMAL_TEMP 31
 
 double temp_c, humidity;
 unsigned long int poll_time, led_time;
 bool LED_state = FALSE;
-
+bool notify = TRUE;
 PietteTech_DHT DHT(SENSOR_PIN, DHT_TYPE);
 
 
@@ -51,14 +50,23 @@ void loop() {
     if (result == DHTLIB_OK) {
       temp_c = DHT.getCelsius();
       humidity = DHT.getHumidity();
-      Serial.printf("Humidity: %.0f%%\n", DHT.getHumidity());
-      Serial.printf("Temp: %.0fC\n", DHT.getCelsius());
+      Serial.printf("Humidity: %.0f%%\n", humidity);
+      Serial.printf("Temp: %.0fC\n", temp_c);
 
       // publish to the cloud
       Particle.publish("temp", String(temp_c, 0), PRIVATE);
 
-      if (temp_c >= CRITICAL_TEMP) {
-        Particle.publish("n_cloud_critical_temp", String(temp_c, 0), PRIVATE);
+      if (temp_c >= CRITICAL_TEMP && notify) {
+        Particle.publish("n_cloud_critical_temp", String(temp_c, 0), PRIVATE); 
+        notify = FALSE;     
+      }
+      
+      if (temp_c >= NORMAL_TEMP && !notify) {
+        Particle.publish("n_cloud_temp", String(temp_c, 0), PRIVATE);
+      }
+
+      if (!notify && temp_c < NORMAL_TEMP) {
+        notify = TRUE;
       }
     }
     // toggle LED
