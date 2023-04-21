@@ -1,17 +1,18 @@
 /*
  * Project ACM-Temp
- * Description: 
- * Author:
- * Date:
+ * Description: This is a project to monitor the temperature of the ACM server closet
+ * Author: Nadia Potteiger
+ * Date: 2023-04-17
  */
 
 #include "PietteTech_DHT.h"
+#include "VL53L1X.h"
 
 #define SENSOR_PIN D2
 #define HEARTBEAT_LED D7
 #define DHT_TYPE DHT11
 #define POLL_RATE 30000 // read every 30 secs
-#define LED_RATE 2000   // blink at 0.5 hz
+// #define LED_RATE 2000   // blink at 0.5 hz
 #define CRITICAL_TEMP 35
 
 double temp_c, humidity;
@@ -29,14 +30,13 @@ void setup() {
   Serial.begin(9600);
   DHT.begin();
 
-  // cloud variables for the webpage
-  Particle.variable("cV_temp", temp_c);
-  Particle.variable("cV_humidity", humidity);
+  // // cloud variables for the webpage
+  // Particle.variable("cV_temp", temp_c);
+  // Particle.variable("cV_humidity", humidity);
 
-  // Particle.subscribe("critical-temp", critical_temp_handler);
   // non-blocking method but doesn't read the sensor too much
   poll_time = millis() + POLL_RATE;
-  led_time = millis() + LED_RATE;
+  // led_time = millis() + LED_RATE;
 }
 
 // loop() runs over and over again, as quickly as it can execute.
@@ -59,7 +59,6 @@ void loop() {
 
       if (temp_c >= CRITICAL_TEMP) {
         Particle.publish("n_cloud_critical_temp", String(temp_c, 0), PRIVATE);
-        delay(5000);
       }
     }
     // toggle LED
